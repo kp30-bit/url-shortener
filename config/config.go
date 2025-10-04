@@ -1,8 +1,7 @@
 package config
 
 import (
-	"fmt"
-	"os"
+	"log"
 )
 
 type Config struct {
@@ -12,21 +11,11 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
-	port := os.Getenv("PORT")
-	mongoURI := os.Getenv("MONGO_URI")
-	dbName := os.Getenv("MONGO_DB_NAME")
+	port := "27017"
+	mongoURI := "mongodb+srv://kamalpratik:youwillneverwalkalone@cluster0.lu5o0r2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+	dbName := "Cluster0"
 
-	if port == "" {
-		port = "8080"
-	}
-	if mongoURI == "" {
-		mongoURI = "mongodb://localhost:27017"
-	}
-	if dbName == "" {
-		dbName = "url_shortener"
-	}
-
-	fmt.Println("📦 Loaded Config: ", port, dbName)
+	log.Printf("📦 Loaded Config: %v,%v", port, dbName)
 	return &Config{
 		Port:        port,
 		MongoURI:    mongoURI,
