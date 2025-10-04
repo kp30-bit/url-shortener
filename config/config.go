@@ -11,7 +11,7 @@ type Config struct {
 	MongoDBName string
 }
 
-func Load() (*Config, error) {
+func LoadConfig() (*Config, error) {
 	port := os.Getenv("PORT")
 	mongoURI := os.Getenv("MONGO_URI")
 	dbName := os.Getenv("MONGO_DB_NAME")
