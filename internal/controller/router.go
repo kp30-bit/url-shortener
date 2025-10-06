@@ -11,6 +11,7 @@ func RegisterURLRoutes(r *gin.Engine, u usecase.URLUsecase) {
 	{
 		urlGroup.POST("/shorten", u.ShortenURLHandler)
 		urlGroup.GET("/:shortID", u.GetOriginalURLHandler)
-		urlGroup.GET("/list", u.ListAllURLsHandler)
+		urlGroup.GET("/list", u.ListAllURLsHandler) // api for dashboarding, visualization and observability
+		urlGroup.DELETE("/:shortID", u.DeleteURLHandler)
 	}
 }

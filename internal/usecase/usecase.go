@@ -4,11 +4,13 @@ import (
 	"context"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"time"
 
 	repository "github.com/kp30-bit/url-shortener/internal/repository/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +19,7 @@ type URLUsecase interface {
 	ShortenURLHandler(c *gin.Context)
 	GetOriginalURLHandler(c *gin.Context)
 	ListAllURLsHandler(c *gin.Context)
+	DeleteURLHandler(c *gin.Context)
 }
 
 type urlUsecase struct {
@@ -31,6 +34,7 @@ type ShortenURLResponse struct {
 	ShortID  string `json:"short_id"`
 	ShortURL string `json:"short_url"`
 }
+
 type ShortenURLRequest struct {
 	OriginalURL string `json:"original_url" binding:"required,url"`
 }
@@ -39,6 +43,7 @@ type URLMapping struct {
 	ShortID     string    `bson:"short_id" json:"short_id"`
 	OriginalURL string    `bson:"original_url" json:"original_url"`
 	CreatedAt   time.Time `bson:"created_at" json:"created_at"`
+	Clicks      int       `bson:"clicks" json:"clicks"`
 }
 
 func (u *urlUsecase) ShortenURLHandler(c *gin.Context) {
@@ -127,8 +132,49 @@ func (u *urlUsecase) GetOriginalURLHandler(c *gin.Context) {
 }
 
 func (u *urlUsecase) ListAllURLsHandler(c *gin.Context) {
-	// Fetch all URLs (for dev/testing)
-	c.JSON(http.StatusOK, gin.H{"message": "list all urls endpoint"})
+	collection := u.db.Database.Collection("urls")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Optional: Pagination parameters from query string
+	page := 1
+	limit := 20
+
+	if p := c.Query("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
+			limit = parsed
+		}
+	}
+
+	skip := (page - 1) * limit
+
+	// MongoDB find options
+	findOptions := options.Find()
+	findOptions.SetSkip(int64(skip))
+	findOptions.SetLimit(int64(limit))
+	findOptions.SetSort(bson.M{"created_at": -1}) // newest first
+
+	// Query MongoDB
+	cursor, err := collection.Find(ctx, bson.M{}, findOptions)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch URLs: " + err.Error()})
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var urls []URLMapping
+	if err := cursor.All(ctx, &urls); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse URL records: " + err.Error()})
+		return
+	}
+
+	// Return response
+	c.JSON(http.StatusOK, urls)
 }
 
 func GenerateShortID(length int) string {
@@ -139,4 +185,30 @@ func GenerateShortID(length int) string {
 		id[i] = charset[rand.Intn(len(charset))]
 	}
 	return string(id)
+}
+
+func (u *urlUsecase) DeleteURLHandler(c *gin.Context) {
+	shortID := c.Param("shortID")
+	if shortID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "shortID missing in request"})
+		return
+	}
+
+	collection := u.db.Database.Collection("urls")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Delete the document with the given shortID
+	result, err := collection.DeleteOne(ctx, bson.M{"short_id": shortID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete URL: " + err.Error()})
+		return
+	}
+
+	if result.DeletedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Short URL not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Short URL deleted successfully"})
 }
