@@ -11,7 +11,7 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
-	port := "27017"
+	port := "8080"
 	mongoURI := "mongodb+srv://kamalpratik:youwillneverwalkalone@cluster0.lu5o0r2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 	dbName := "Cluster0"
 
