@@ -2,11 +2,13 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/kp30-bit/url-shortener/config"
 	repository "github.com/kp30-bit/url-shortener/internal/repository/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,11 +25,15 @@ type URLUsecase interface {
 }
 
 type urlUsecase struct {
-	db *repository.MongoDB
+	db  *repository.MongoDB
+	cfg *config.Config
 }
 
-func NewURLUsecase(mongoDB *repository.MongoDB) URLUsecase {
-	return &urlUsecase{db: mongoDB}
+func NewURLUsecase(mongoDB *repository.MongoDB, cfg *config.Config) URLUsecase {
+	return &urlUsecase{
+		db:  mongoDB,
+		cfg: cfg,
+	}
 }
 
 type ShortenURLResponse struct {
@@ -64,7 +70,7 @@ func (u *urlUsecase) ShortenURLHandler(c *gin.Context) {
 	err := collection.FindOne(ctx, bson.M{"original_url": req.OriginalURL}).Decode(&existing)
 	if err == nil {
 		// URL already exists, return existing short URL
-		shortURL := "http://localhost:8080/api/url/" + existing.ShortID // replace localhost later
+		shortURL := fmt.Sprintf("http://%s/api/url/%s", u.cfg.Host, existing.ShortID)
 		c.JSON(http.StatusOK, ShortenURLResponse{
 			ShortID:  existing.ShortID,
 			ShortURL: shortURL,
@@ -91,7 +97,7 @@ func (u *urlUsecase) ShortenURLHandler(c *gin.Context) {
 	}
 
 	// Step 5: Return the new short URL
-	shortURL := "http://localhost:8080/api/url/" + shortID // replace localhost later
+	shortURL := fmt.Sprintf("http://%s/api/url/%s", u.cfg.Host, shortID)
 	c.JSON(http.StatusOK, ShortenURLResponse{
 		ShortID:  shortID,
 		ShortURL: shortURL,
