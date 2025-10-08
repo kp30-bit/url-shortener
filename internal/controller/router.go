@@ -7,11 +7,10 @@ import (
 )
 
 func RegisterURLRoutes(r *gin.Engine, u usecase.URLUsecase) {
-	urlGroup := r.Group("/api/url")
-	{
-		urlGroup.POST("/shorten", u.ShortenURLHandler)
-		urlGroup.GET("/:shortID", u.GetOriginalURLHandler)
-		urlGroup.GET("/list", u.ListAllURLsHandler) // api for dashboarding, visualization and observability
-		urlGroup.DELETE("/:shortID", u.DeleteURLHandler)
-	}
+
+	r.POST("/shorten", u.ShortenURLHandler)
+	r.GET("/:shortID", u.GetOriginalURLHandler)
+	r.DELETE("/:shortID", u.DeleteURLHandler)
+	r.GET("/list", u.ListAllURLsHandler) // dashboard / observability API
+	r.GET("/analytics", u.GetAnalyticsHandler)
 }

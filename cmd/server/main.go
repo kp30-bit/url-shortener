@@ -65,12 +65,24 @@ func GetMongo() (*repository.MongoClient, *repository.MongoDB) {
 // NewApp initializes application
 func NewApp() *App {
 	cfg := GetConfig()
+
 	client, db := GetMongo()
 	urlUsecase := usecase.NewURLUsecase(db, cfg)
 	router := gin.Default()
 
 	// Register routes
 	controller.RegisterURLRoutes(router, urlUsecase)
+
+	// Serve static frontend assets (JS, CSS)
+	router.Static("/static", "./frontend")
+
+	// Serve main HTML file
+	router.LoadHTMLFiles("frontend/index.html")
+
+	// Render frontend when visiting root
+	router.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
 
 	return &App{
 		Router:      router,

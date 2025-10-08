@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -22,6 +23,7 @@ type URLUsecase interface {
 	GetOriginalURLHandler(c *gin.Context)
 	ListAllURLsHandler(c *gin.Context)
 	DeleteURLHandler(c *gin.Context)
+	GetAnalyticsHandler(c *gin.Context)
 }
 
 type urlUsecase struct {
@@ -57,6 +59,7 @@ func (u *urlUsecase) ShortenURLHandler(c *gin.Context) {
 
 	// Step 1: Parse and validate request
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("Invalid input: %v", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
 		return
 	}
@@ -78,6 +81,7 @@ func (u *urlUsecase) ShortenURLHandler(c *gin.Context) {
 		return
 	} else if err != mongo.ErrNoDocuments {
 		// Some other DB error
+		log.Printf("error : Database error: %v", err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error: " + err.Error()})
 		return
 	}
@@ -92,6 +96,7 @@ func (u *urlUsecase) ShortenURLHandler(c *gin.Context) {
 		"created_at":   time.Now(),
 	})
 	if err != nil {
+		log.Printf("Failed to store URL mapping: %v", err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store URL mapping"})
 		return
 	}
@@ -217,4 +222,46 @@ func (u *urlUsecase) DeleteURLHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Short URL deleted successfully"})
+}
+
+type Analytics struct {
+	TotalURLs   int `json:"total_urls"`
+	TotalClicks int `json:"total_clicks"`
+}
+
+func (u *urlUsecase) GetAnalyticsHandler(c *gin.Context) {
+	collection := u.db.Collection("urls")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Total URLs
+	totalURLs, err := collection.CountDocuments(ctx, bson.M{})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get total URLs"})
+		return
+	}
+
+	// Total Clicks (aggregate sum)
+	cursor, err := collection.Aggregate(ctx, bson.A{
+		bson.M{"$group": bson.M{"_id": nil, "totalClicks": bson.M{"$sum": "$clicks"}}},
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get total clicks"})
+		return
+	}
+	var result []bson.M
+	if err := cursor.All(ctx, &result); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse analytics"})
+		return
+	}
+
+	totalClicks := 0
+	if len(result) > 0 {
+		totalClicks = int(result[0]["totalClicks"].(int32)) // mongo returns int32
+	}
+
+	c.JSON(http.StatusOK, Analytics{
+		TotalURLs:   int(totalURLs),
+		TotalClicks: totalClicks,
+	})
 }
