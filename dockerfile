@@ -34,12 +34,6 @@ COPY --from=builder /app/frontend ./frontend
 # Expose application port
 EXPOSE 8080
 
-# Default environment variables (can be overridden at runtime)
-ENV CONFIG_ENV=prod
-ENV PORT=8080
-ENV MONGO_URI="mongodb+srv://kamalpratik:youwillneverwalkalone@cluster0.lu5o0r2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-ENV MONGO_DB="Cluster0"
-ENV HOST="kliplink"
 
 # Run the Go binary
 CMD ["./url-shortener"]

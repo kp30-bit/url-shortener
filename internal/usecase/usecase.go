@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/kp30-bit/url-shortener/config"
+	domain "github.com/kp30-bit/url-shortener/internal/domain/entity"
+	"github.com/kp30-bit/url-shortener/internal/interfaces"
 	repository "github.com/kp30-bit/url-shortener/internal/repository/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,44 +20,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type URLUsecase interface {
-	ShortenURLHandler(c *gin.Context)
-	GetOriginalURLHandler(c *gin.Context)
-	ListAllURLsHandler(c *gin.Context)
-	DeleteURLHandler(c *gin.Context)
-	GetAnalyticsHandler(c *gin.Context)
-}
-
 type urlUsecase struct {
 	db  *repository.MongoDB
 	cfg *config.Config
 }
 
-func NewURLUsecase(mongoDB *repository.MongoDB, cfg *config.Config) URLUsecase {
+func NewURLUsecase(mongoDB *repository.MongoDB, cfg *config.Config) interfaces.URLUsecase {
 	return &urlUsecase{
 		db:  mongoDB,
 		cfg: cfg,
 	}
 }
 
-type ShortenURLResponse struct {
-	ShortID  string `json:"short_id"`
-	ShortURL string `json:"short_url"`
-}
-
-type ShortenURLRequest struct {
-	OriginalURL string `json:"original_url" binding:"required,url"`
-}
-
-type URLMapping struct {
-	ShortID     string    `bson:"short_id" json:"short_id"`
-	OriginalURL string    `bson:"original_url" json:"original_url"`
-	CreatedAt   time.Time `bson:"created_at" json:"created_at"`
-	Clicks      int       `bson:"clicks" json:"clicks"`
-}
-
 func (u *urlUsecase) ShortenURLHandler(c *gin.Context) {
-	var req ShortenURLRequest
+	var req domain.ShortenURLRequest
 
 	// Step 1: Parse and validate request
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -69,12 +47,12 @@ func (u *urlUsecase) ShortenURLHandler(c *gin.Context) {
 	defer cancel()
 
 	// Step 2: Check if original URL already exists
-	var existing URLMapping
+	var existing domain.URLMapping
 	err := collection.FindOne(ctx, bson.M{"original_url": req.OriginalURL}).Decode(&existing)
 	if err == nil {
 		// URL already exists, return existing short URL
 		shortURL := fmt.Sprintf("http://%s/api/url/%s", u.cfg.Host, existing.ShortID)
-		c.JSON(http.StatusOK, ShortenURLResponse{
+		c.JSON(http.StatusOK, domain.ShortenURLResponse{
 			ShortID:  existing.ShortID,
 			ShortURL: shortURL,
 		})
@@ -103,7 +81,7 @@ func (u *urlUsecase) ShortenURLHandler(c *gin.Context) {
 
 	// Step 5: Return the new short URL
 	shortURL := fmt.Sprintf("http://%s/api/url/%s", u.cfg.Host, shortID)
-	c.JSON(http.StatusOK, ShortenURLResponse{
+	c.JSON(http.StatusOK, domain.ShortenURLResponse{
 		ShortID:  shortID,
 		ShortURL: shortURL,
 	})
@@ -120,7 +98,7 @@ func (u *urlUsecase) GetOriginalURLHandler(c *gin.Context) {
 	defer cancel()
 
 	collection := u.db.Database.Collection("urls")
-	var result URLMapping
+	var result domain.URLMapping
 	err := collection.FindOne(ctx, bson.M{"short_id": shortID}).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -178,7 +156,7 @@ func (u *urlUsecase) ListAllURLsHandler(c *gin.Context) {
 	}
 	defer cursor.Close(ctx)
 
-	var urls []URLMapping
+	var urls []domain.URLMapping
 	if err := cursor.All(ctx, &urls); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse URL records: " + err.Error()})
 		return
