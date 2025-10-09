@@ -1,12 +1,12 @@
 package controller
 
 import (
-	"github.com/kp30-bit/url-shortener/internal/usecase"
+	"github.com/kp30-bit/url-shortener/internal/interfaces"
 
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterURLRoutes(r *gin.Engine, u usecase.URLUsecase) {
+func RegisterURLRoutes(r *gin.Engine, u interfaces.URLUsecase) {
 
 	r.POST("/shorten", u.ShortenURLHandler)
 	r.GET("/:shortID", u.GetOriginalURLHandler)

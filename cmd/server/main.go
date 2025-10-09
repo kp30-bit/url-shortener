@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kp30-bit/url-shortener/config"
 	"github.com/kp30-bit/url-shortener/internal/controller"
+	"github.com/kp30-bit/url-shortener/internal/interfaces"
 	repository "github.com/kp30-bit/url-shortener/internal/repository/mongo"
 	"github.com/kp30-bit/url-shortener/internal/usecase"
 )
@@ -20,7 +21,7 @@ import (
 // App struct
 type App struct {
 	Router      *gin.Engine
-	URLUsecase  usecase.URLUsecase
+	URLUsecase  interfaces.URLUsecase
 	MongoClient *repository.MongoClient
 	Config      *config.Config
 }
