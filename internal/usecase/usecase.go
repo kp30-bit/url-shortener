@@ -65,7 +65,7 @@ func (u *urlUsecase) ShortenURLHandler(c *gin.Context) {
 	}
 
 	collection := u.db.Database.Collection("urls")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
 	// Step 2: Check if original URL already exists
@@ -116,7 +116,7 @@ func (u *urlUsecase) GetOriginalURLHandler(c *gin.Context) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
 	collection := u.db.Database.Collection("urls")
@@ -144,7 +144,7 @@ func (u *urlUsecase) GetOriginalURLHandler(c *gin.Context) {
 
 func (u *urlUsecase) ListAllURLsHandler(c *gin.Context) {
 	collection := u.db.Database.Collection("urls")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
 	// Optional: Pagination parameters from query string
@@ -206,7 +206,7 @@ func (u *urlUsecase) DeleteURLHandler(c *gin.Context) {
 	}
 
 	collection := u.db.Database.Collection("urls")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
 	// Delete the document with the given shortID
@@ -231,7 +231,7 @@ type Analytics struct {
 
 func (u *urlUsecase) GetAnalyticsHandler(c *gin.Context) {
 	collection := u.db.Collection("urls")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
 	// Total URLs
