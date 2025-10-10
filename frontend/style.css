@@ -14,22 +14,24 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 1rem;
 }
 
+/* Container */
 .container {
   text-align: center;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   backdrop-filter: blur(12px);
-  padding: 3rem;
-  width: 90%;
+  padding: 2.5rem 2rem;
+  width: 100%;
   max-width: 480px;
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
 }
 
-/* Stylish Title */
+/* Title */
 .title {
-  font-size: 2.8rem;
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
   letter-spacing: 1px;
   color: #ffffff;
   margin-bottom: 0.6rem;
@@ -37,13 +39,7 @@ body {
   display: inline-block;
 }
 
-.title .k {
-  background: linear-gradient(135deg, #1db954, #1ed760);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 700;
-}
-
+.title .k,
 .title .p {
   background: linear-gradient(135deg, #1db954, #1ed760);
   -webkit-background-clip: text;
@@ -51,9 +47,10 @@ body {
   font-weight: 700;
 }
 
+/* Subtitle */
 .subtitle {
   color: #bbb;
-  font-size: 1rem;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
   margin-bottom: 2rem;
   font-weight: 400;
   letter-spacing: 0.5px;
@@ -64,19 +61,21 @@ body {
   display: flex;
   gap: 10px;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
 input {
   flex: 1;
-  padding: 12px 15px;
+  padding: 0.75rem 1rem;
   border: none;
   border-radius: 8px;
   outline: none;
   font-size: 1rem;
+  min-width: 0;
 }
 
 button {
-  padding: 12px 18px;
+  padding: 0.75rem 1.2rem;
   border: none;
   border-radius: 8px;
   background: linear-gradient(135deg, #1db954, #1ed760);
@@ -84,6 +83,7 @@ button {
   font-weight: 600;
   cursor: pointer;
   transition: 0.2s;
+  white-space: nowrap;
 }
 
 button:hover {
@@ -91,16 +91,19 @@ button:hover {
   transform: translateY(-2px);
 }
 
+/* Result */
 .result-box {
   display: flex;
   margin-top: 0.5rem;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .result-box input {
   flex: 1;
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
+  font-size: 0.95rem;
 }
 
 .hidden {
@@ -128,14 +131,38 @@ footer {
   color: #fff;
   display: flex;
   justify-content: center;
-  gap: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
   padding: 0.75rem 1rem;
   font-weight: bold;
-  font-size: 0.9rem;
+  font-size: clamp(0.75rem, 2vw, 0.9rem);
 }
 
 .analytics-bottom span {
   display: flex;
   align-items: center;
   gap: 0.3rem;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .container {
+    padding: 1.8rem 1.2rem;
+  }
+
+  .card {
+    flex-direction: column;
+  }
+
+  button {
+    width: 100%;
+  }
+
+  .result-box {
+    flex-direction: column;
+  }
+
+  footer {
+    font-size: 0.75rem;
+  }
 }
